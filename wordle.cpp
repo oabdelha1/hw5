@@ -14,7 +14,7 @@ using namespace std;
 
 
 // Add prototypes of helper functions here
-void wordinator(const string& in, const string& floating, const set<std::string>& dict, int len, set<string>& finaldict, string word, vector<char> floatingChars);
+void wordinator(string &in, const set<string>& dict, set<string>& finaldict, size_t len, map<char, int> floatingChars, int floatingCount, int dash);
 size_t calcbars(const std::string& in, int len);
 
 // Definition of primary wordle function
@@ -35,66 +35,56 @@ std::set<std::string> wordle(
     }
      */
 
-    vector<char> floatingChars;
-
-    for(size_t i = 0; i < floating.size(); i++) {
-        floatingChars.push_back(floating[i]);
+    map<char, int> floatingChars;
+    int floatcount = 0;
+    for (size_t i = 0; i < floating.size(); i++) {
+        floatingChars[floating[i]]++;
+        floatcount++;
     }
-    cout << "test " << endl;
-    wordinator(in, floating, dict, 0, finaldict, "", floatingChars);
+
+    int dash = 0;
+    for(int i = 0; i < in.size(); i++){
+        if (in[i] == '-') dash++;
+    }
+
+    cout << "test a" << endl;
+    string incopy = in;
+    //wordinator(incopy, floating, dict, finaldict, dash, 0, floatingChars, floatcount);
+    wordinator(incopy, dict, finaldict, 0, floatingChars, floatcount, dash);
     return finaldict;
 }
 
 // Define any helper functions here
 
-void wordinator(const std::string& in, const std::string& floating, const std::set<std::string>& dict, int len, set<string>& finaldict, string word, vector<char>floatingChars){
-
-    //Base Case
-    cout << "Hi" << endl;
-    if (len == in.length()){
-        if (dict.find(word)!=dict.end()) {
-            finaldict.insert(word);
+void wordinator(string &in, const set<string>& dict, set<string>& finaldict, size_t len, map<char, int> floatingChars, int floatingCount, int dash){
+    if (len >= in.length()) {
+        if (dict.find(in) != dict.end()) {
+            finaldict.insert(in);
         }
         return;
     }
 
-    //If current index has letter, add letter
-    if (in[len] != '-'){
-        word+= in[len];
-        wordinator(in, floating, dict, len+1, finaldict, word, floatingChars);
-    }
-    else {
-        if(calcbars(in, len) == floatingChars.size()) {
-            vector<char> temp = floatingChars;
-            for (size_t i = 0; i < floatingChars.size(); i ++){
-                word += floatingChars[i];
-                temp.erase(temp.begin()+i);
-                wordinator(in, floating, dict, len+1, finaldict, word, floatingChars);
-                floatingChars = temp;
+    // If current index has a letter, add letter
+    if (in[len] != '-') {
+        wordinator(in, dict, finaldict, len + 1, floatingChars, floatingCount, dash);
+    } else {
+        for (int i = 97; i < 123; i++) {
+            in[len] = char(i);
+
+            // Case: Floating character
+            if (floatingChars[char(i)] > 0) {
+                floatingChars[char(i)]--;
+                wordinator(in, dict, finaldict, len + 1, floatingChars, floatingCount - 1, dash-1);
+                floatingChars[char(i)]++;
+            }
+                // Case: Non-floating character
+            else if (floatingCount < dash) {
+                wordinator(in, dict, finaldict, len + 1, floatingChars, floatingCount, dash-1);
             }
         }
-        else {
-            vector<char>temp = floatingChars;
-            for (int i = 97; i < 123; i++) {
-                vector<char>::iterator charloc = find(floatingChars.begin(), floatingChars.end(), char(i));
-                if (charloc != floatingChars.end()) {
-                    cout <<"seg fault b" << endl;
-                    temp.erase(charloc);
-                    word += char(i);
-                    wordinator(in, floating, dict, len + 1, finaldict, word, floatingChars);
-                    floatingChars = temp;
-                }
-                else {
-                    cout << "seg fault a" << endl;
-                    word += char(i);
-                    wordinator(in, floating, dict, len+1, finaldict, word, floatingChars);
-                }
-            }
-        }
+        // Restore the original character at position len
+        in[len] = '-';
     }
-
-
-
 }
 
 

@@ -22,7 +22,7 @@ static const Worker_T INVALID_ID = (unsigned int)-1;
 
 // Add prototypes for any helper functions here
 
-bool scheduleinator (int r, int c, const AvailabilityMatrix& avail, const size_t maxShifts, DailySchedule& sched, vector<int> tracker);
+bool scheduleinator (int r, int c, const AvailabilityMatrix& avail, const size_t maxShifts, DailySchedule& sched, vector<int> tracker, vector<set<int>>& daytrack);
 
 // Add your implementation of schedule() and other helper functions here
 
@@ -44,19 +44,20 @@ bool schedule(
     //Create blank schedule in sched
     vector<Worker_T> row (dailyNeed, INVALID_ID);
     vector<vector<Worker_T>> newsched (avail[0].size(), row);
+    vector<set<int>> daysscheduled(avail.size());
     sched = newsched;
 
-    return scheduleinator (0, 0, avail, maxShifts, sched, tracker);
+    return scheduleinator (0, 0, avail, maxShifts, sched, tracker, daysscheduled);
 }
 
-bool scheduleinator(int r, int c, const AvailabilityMatrix& avail, const size_t maxShifts, DailySchedule& sched, vector<int> tracker){
+bool scheduleinator(int r, int c, const AvailabilityMatrix& avail, const size_t maxShifts, DailySchedule& sched, vector<int> tracker, vector<set<int>>& daytrack){
     if (r == sched.size()) return true;
     if (c == sched[0].size()){
-        return scheduleinator(r+1, 0, avail, maxShifts, sched, tracker);
+        return scheduleinator(r+1, 0, avail, maxShifts, sched, tracker, daytrack);
     }
 
     if (sched[r][c] != INVALID_ID){
-        scheduleinator(r, c+1, avail, maxShifts, sched, tracker);
+        scheduleinator(r, c+1, avail, maxShifts, sched, tracker, daytrack);
     }
 
     for (size_t i = 0; i < avail.size(); i++){
@@ -70,13 +71,18 @@ bool scheduleinator(int r, int c, const AvailabilityMatrix& avail, const size_t 
             sched[r][c] = INVALID_ID;
             continue;
         }
+        if (daytrack[i].find(r) != daytrack[i].end()){
+            sched[r][c] = INVALID_ID;
+            continue;
+        }
 
         tracker[i]++;
 
         //???
-        if (!scheduleinator(r, c+1, avail, maxShifts, sched, tracker)){
+        if (!scheduleinator(r, c+1, avail, maxShifts, sched, tracker, daytrack)){
             sched[r][c] = INVALID_ID;
             tracker[i]--;
+            daytrack[i].insert(r);
             continue;
         }
         else{

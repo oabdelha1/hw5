@@ -6,3 +6,4 @@ schedtest
 .idea/
 dict-eng.txt
 .DS_Store
+wordle old.cpp
