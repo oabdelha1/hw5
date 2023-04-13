@@ -38,59 +38,92 @@ bool schedule(
     }
     sched.clear();
 
-    //Shift tracker
-    vector<int> tracker (avail.size(), 0);
+    //Shift number tracker
+    vector<int> tracker (avail[0].size(), 0);
+    //Shift day tracker
+    vector<set<int>> daysscheduled(avail[0].size());
 
     //Create blank schedule in sched
     vector<Worker_T> row (dailyNeed, INVALID_ID);
-    vector<vector<Worker_T>> newsched (avail[0].size(), row);
-    vector<set<int>> daysscheduled(avail.size());
+    vector<vector<Worker_T>> newsched (avail.size(), row);
     sched = newsched;
+
+    //Debug
 
     return scheduleinator (0, 0, avail, maxShifts, sched, tracker, daysscheduled, 0);
 }
 
 bool scheduleinator(int r, int c, const AvailabilityMatrix& avail, const size_t maxShifts, DailySchedule& sched, vector<int> tracker, vector<set<int>>& daytrack, int track){
     int full = sched.size()*sched[0].size();
-    if (track == full) return true;
-    if (c == sched[0].size()){
+    //cout << "r: " << r << " c: " << c << " track: " << track << endl;
+
+    if (r == sched.size()) return true;
+    //Daily
+    /*
+    else if (c == sched[0].size()){
         return scheduleinator(r+1, 0, avail, maxShifts, sched, tracker, daytrack, track);
     }
-
-    if (sched[r][c] != INVALID_ID){
+     */
+    /*
+    else if (sched[r][c] != INVALID_ID){
         scheduleinator(r, c+1, avail, maxShifts, sched, tracker, daytrack, track);
-    }
+    }*/
 
-    for (size_t i = 0; i < avail.size(); i++){
+    for (size_t i = 0; i < avail[r].size(); i++) {
         //Feeling good
-        sched[r][c] = i;
-        if (tracker[i] >= maxShifts){
-            sched[r][c] = INVALID_ID;
+
+        //r = day
+        //c = shift
+        //i = person
+
+        if (i >= daytrack.size()){
             continue;
         }
-        if (!avail[i][r]){
-            sched[r][c] = INVALID_ID;
+        if (tracker[i] >= maxShifts) {
+            //sched[r][c] = INVALID_ID;
             continue;
         }
-        if (daytrack[i].find(r) != daytrack[i].end()){
-            sched[r][c] = INVALID_ID;
+        if (!avail[r][i]) {
+            //sched[r][c] = INVALID_ID;
+            continue;
+        }
+        if (daytrack[i].find(r) != daytrack[i].end()) {
+            //sched[r][c] = INVALID_ID;
             continue;
         }
 
+        bool valid = 0;
+        tracker[i]++;
+        sched[r][c] = i;
+        daytrack[i].insert(r);
+
+        if (c+1 == sched[r].size()){
+            valid = scheduleinator(r+1, 0, avail, maxShifts, sched, tracker, daytrack, track);
+        }
+        else valid = scheduleinator(r, c+1, avail, maxShifts, sched, tracker, daytrack, track);
+
+        if (valid) return true;
+
+        sched[r][c] = INVALID_ID;
+        tracker[i]--;
+        daytrack[i].erase(r);
+
+        /*
+        sched[r][c] = i;
         tracker[i]++;
         daytrack[i].insert(r);
         track++;
         //???
-        if (!scheduleinator(r, c+1, avail, maxShifts, sched, tracker, daytrack, track)){
-            sched[r][c] = INVALID_ID;
-            tracker[i]--;
-            daytrack[i].erase(r);
-            track--;
-            continue;
-        }
-        else{
+        if (scheduleinator(r, c + 1, avail, maxShifts, sched, tracker, daytrack, track)) {
             return true;
         }
+
+        sched[r][c] = INVALID_ID;
+        tracker[i]--;
+        daytrack[i].erase(r);
+        track--;
+        //continue;
+         */
     }
 
     return false;
